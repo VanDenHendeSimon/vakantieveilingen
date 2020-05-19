@@ -1,5 +1,6 @@
 from models.VakantieveilingenController import VakantieveilingenController
 import json
+import math
 
 
 def main():
@@ -16,6 +17,16 @@ def main():
         for auction in auctions:
             auction.update(controller.process_auction(auction))
             print(auction)
+            if auction['category'] not in blacklist['categories']:
+                print("might buy, highest bid: €%.2f" % math.ceil(
+                    0.25 * auction['retail_price'] - auction['extra_costs']
+                ))
+                details = controller.fetch_auction_details(auction['url'])
+                print(details)
+                break
+            else:
+                print("Skip - Bad category")
+
             print("-" * 20)
 
         print("DONE")

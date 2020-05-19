@@ -60,7 +60,25 @@ class VakantieveilingenController:
             'retail_price': self.get_retail_price(),
             'supplier_link': self.get_supplier_link(),
             'category': self.get_category(),
+            'current_bid': self.get_current_bid(),
         }
+
+    def fetch_auction_details(self, url):
+        """
+        This method is ran after an item has been bought
+        It will collect all valuable data for a reselling post
+        """
+        self.browser.get(url)
+        time.sleep(2)
+
+        auction_content = self.browser.find_element_by_class_name('auction-content')
+
+        # TODO: Test this
+        title = auction_content.find_element_by_class_name('auction-title').text
+        description = auction_content.find_element_by_class_name('auction-description').text
+        product_details = auction_content.find_element_by_class_name('description').find_elements_by_css_selector('ul, p')
+
+        return ''
 
     def get_extra_cost(self):
         try:
@@ -78,6 +96,7 @@ class VakantieveilingenController:
             return VakantieveilingenController.price_to_float(
                 self.browser.find_element_by_class_name('retail-price').text
             )
+
         except Exception:
             return None
 
@@ -91,6 +110,13 @@ class VakantieveilingenController:
     def get_category(self):
         try:
             return self.browser.find_element_by_id('breadcrumb').find_elements_by_tag_name('a')[-1].text
+
+        except Exception:
+            return None
+
+    def get_current_bid(self):
+        try:
+            return int(self.browser.find_element_by_id('jsMainLotCurrentBid').text)
 
         except Exception:
             return None
