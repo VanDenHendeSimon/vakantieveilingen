@@ -13,7 +13,7 @@ class Database:
                     os.path.dirname(__file__), "../config.py")),
                 autocommit=False
             )
-            if "AttributeError" in(str(type(Database.db))):
+            if "AttributeError" in (str(type(Database.db))):
                 raise Exception("foutieve database parameters in config")
             Database.cursor = Database.db.cursor(
                 dictionary=True, buffered=True)  # lazy loaded

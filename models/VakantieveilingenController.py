@@ -37,39 +37,59 @@ class VakantieveilingenController:
     def buy(self, url, max_price):
         # move into a new thread / open up a new browser first? not necessary now
         auction_details = self.process_auction(url)
+        time.sleep(1)
         auction_details.update({
             "deadline": VakantieveilingenController.get_deadline(self.browser)
         })
 
-        time_until_deadline = auction_details['deadline'] - datetime.datetime.now()
+        try:
+            time_until_deadline = auction_details['deadline'] - datetime.datetime.now()
+        except Exception:
+            self.buy(url, max_price)
+
         # Sleep until 20 seconds before the deadline
-        # time.sleep(time_until_deadline.seconds - 20)
         print("Sleeping %d seconds" % (time_until_deadline.seconds - 20))
+        time.sleep(time_until_deadline.seconds - 20)
 
         # Get ready to buy
         now = datetime.datetime.now()
         while now < auction_details['deadline']:
-            current_bid = self.get_current_bid()
-            if (current_bid + auction_details['extra_costs']) < max_price:
-                time_until_deadline = auction_details['deadline'] - now
+            try:
+                current_bid = self.get_current_bid()
+                if (current_bid + auction_details['extra_costs']) < max_price:
+                    time_until_deadline = auction_details['deadline'] - now
 
-                if time_until_deadline.seconds == 0:
-                    # Less than a second before the deadline
-                    time.sleep(max(0, (time_until_deadline.microseconds / 1000000) - 0.01))
-                    self.browser.find_element_by_class_name('bid-input').send_keys(str(current_bid + 1))
-                    self.browser.find_element_by_id('jsActiveBidButton').click()
-                    break
+                    if time_until_deadline.seconds == 0:
+                        # Less than a second before the deadline
+                        time.sleep(max(0, (time_until_deadline.microseconds / 1000000) - 0.01))
+                        self.browser.find_element_by_class_name('bid-input').send_keys(str(current_bid + 1))
+                        self.browser.find_element_by_id('jsActiveBidButton').click()
+                        break
 
-                time.sleep(0.05)
-                now = datetime.datetime.now()
+                    time.sleep(0.05)
+                    now = datetime.datetime.now()
 
-            else:
-                print("Current bid is too high.")
-                print("Price: %s, max price: %s" % (
-                    current_bid + auction_details['extra_costs'],
-                    max_price
-                ))
-                break
+                else:
+                    print("Current bid is too high.")
+                    print("Price: %s, max price: %s" % (
+                        current_bid + auction_details['extra_costs'],
+                        max_price
+                    ))
+
+                    self.wait_for_next(url, max_price, auction_details['deadline'])
+
+            except Exception as ex:
+                print("Failed because of error: %s" % ex)
+                self.wait_for_next(url, max_price, auction_details['deadline'])
+
+    def wait_for_next(self, url, max_price, deadline):
+        # wait until current auction is over
+        time_until_deadline = deadline - datetime.datetime.now()
+        print("trying again in %s seconds" % time_until_deadline.seconds)
+
+        time.sleep(time_until_deadline.seconds + 20)
+        # Revisit auction
+        self.buy(url, max_price)
 
     def explore_products(self, amount):
         self.browser.get('https://www.vakantieveilingen.be/producten.html?amount=%s' % amount)
@@ -90,7 +110,7 @@ class VakantieveilingenController:
 
     def process_auction(self, url):
         self.browser.get(url)
-        time.sleep(2)
+        time.sleep(3)
 
         return {
             'extra_costs': self.get_extra_cost(),

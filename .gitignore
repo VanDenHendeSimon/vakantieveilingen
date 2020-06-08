@@ -1,1 +1,3 @@
 config.py
+data/credentials
+models/__pycache__
