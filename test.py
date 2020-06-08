@@ -31,8 +31,8 @@ def main():
     if controller.login("simonvdhende@outlook.com"):
         # Authentication successfull
         controller.buy(
-            'https://www.vakantieveilingen.be/uitstapjes/cursussen-en-workshops/online-cursus_beleggen.html',
-            7
+            'https://www.vakantieveilingen.be/producten/elektronica/aircooler-mobiel_nedis-wit.html',
+            35
         )
 
         # check_auctions(controller)
