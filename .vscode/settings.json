@@ -4,5 +4,7 @@
     "python.linting.pylintEnabled": true,
     "python.formatting.autopep8Args": [
         "--ignore=W293",
-    ]
+        "--max-line-length=120",
+    ],
+    "python.linting.enabled": false
 }

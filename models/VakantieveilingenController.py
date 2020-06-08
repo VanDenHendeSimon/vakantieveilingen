@@ -35,7 +35,7 @@ class VakantieveilingenController:
             return False
 
     def buy(self, url, max_price):
-        # move into a new thread / open up a new browser first? not necessary now
+        # move into a new thread / open up a new browser first? not necessary
         auction_details = self.process_auction(url)
         time.sleep(1)
         auction_details.update({
