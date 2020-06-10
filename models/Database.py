@@ -86,7 +86,7 @@ class Database:
         except connector.Error as error:
             Database.db.rollback()
             result = None
-            print(f"Error: Data niet bewaard.{error.msg}")
+            raise ValueError(f"Error: Data niet bewaard.{error.msg}")
         finally:
             Database.cursor.close()
             Database.db.close()

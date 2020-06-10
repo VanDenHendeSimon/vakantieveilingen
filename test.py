@@ -1,4 +1,7 @@
 from models.VakantieveilingenController import VakantieveilingenController
+from models.DataRepository import DataRepository
+from threading import Thread
+
 import json
 import math
 
@@ -21,19 +24,37 @@ def check_auctions(controller):
         print("-" * 20)
 
 
+def start_bidding(item):
+    item_controller = VakantieveilingenController()
+    if item_controller.login("simonvdhende@outlook.com"):
+        item_controller.buy(
+            item.get('AuctionURL'),
+            item.get('MaxPrice')
+        )
+
+
 def main():
     # Fetch blacklist
     with open('./data/blacklist.json', 'r') as f:
         blacklist = json.load(f)
 
-    # Contact vakantieveiligen
-    controller = VakantieveilingenController()
-    if controller.login("simonvdhende@outlook.com"):
-        # Authentication successfull
-        controller.buy(
-            'https://www.vakantieveilingen.be/producten/elektronica/aircooler-mobiel_nedis-wit.html',
-            35
-        )
+    threads = False
+    if threads:
+        for item in DataRepository.get_wishlist():
+            # Start a thread for each item in the wishlist and try to buy said item
+            item_thread = Thread(target=start_bidding, args=(item,))
+            item_thread.start()
+
+    else:
+        # Contact vakantieveiligen
+        controller = VakantieveilingenController()
+        if controller.login("simonvdhende@outlook.com"):
+            # Authentication successfull
+
+            controller.buy(
+                'https://www.vakantieveilingen.be/producten/elektronica/nordland_personenweegshaal-pd8734.html',
+                25
+            )
 
         # check_auctions(controller)
 

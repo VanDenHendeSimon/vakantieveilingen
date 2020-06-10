@@ -1,3 +1,5 @@
+from .DataRepository import DataRepository
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import re
@@ -34,22 +36,29 @@ class VakantieveilingenController:
         else:
             return False
 
+    def add_to_wishlist(self, url, max_price):
+        # Inserts into database (category / auction tables)
+        auction_details = self.process_auction(url)
+        time.sleep(1)
+
+        if auction_details is not None:
+            DataRepository.create_wishlist(url, max_price)
+
     def buy(self, url, max_price):
         # move into a new thread / open up a new browser first? not necessary
         auction_details = self.process_auction(url)
         time.sleep(1)
-        auction_details.update({
-            "deadline": VakantieveilingenController.get_deadline(self.browser)
-        })
+        auction_details['deadline'] = VakantieveilingenController.get_deadline(self.browser)
 
         try:
             time_until_deadline = auction_details['deadline'] - datetime.datetime.now()
         except Exception:
             self.buy(url, max_price)
 
+        print("auction details: %s" % auction_details)
         # Sleep until 20 seconds before the deadline
         print("Sleeping %d seconds" % (time_until_deadline.seconds - 20))
-        time.sleep(time_until_deadline.seconds - 20)
+        time.sleep(min((time_until_deadline.seconds - 20), 0))
 
         # Get ready to buy
         now = datetime.datetime.now()
@@ -61,9 +70,12 @@ class VakantieveilingenController:
 
                     if time_until_deadline.seconds == 0:
                         # Less than a second before the deadline
-                        time.sleep(max(0, (time_until_deadline.microseconds / 1000000) - 0.01))
+                        # time.sleep(max(0, (time_until_deadline.microseconds / 1000000) - 0.01))
                         self.browser.find_element_by_class_name('bid-input').send_keys(str(current_bid + 1))
                         self.browser.find_element_by_id('jsActiveBidButton').click()
+
+                        # won defaulting to 1, check this somehow
+                        DataRepository.create_history(url, (current_bid + auction_details['extra_costs']), 1, 1)
                         break
 
                     time.sleep(0.05)
@@ -76,6 +88,7 @@ class VakantieveilingenController:
                         max_price
                     ))
 
+                    DataRepository.create_history(url, (current_bid + auction_details['extra_costs']), 0, 0)
                     self.wait_for_next(url, max_price, auction_details['deadline'])
 
             except Exception as ex:
@@ -84,10 +97,16 @@ class VakantieveilingenController:
 
     def wait_for_next(self, url, max_price, deadline):
         # wait until current auction is over
-        time_until_deadline = deadline - datetime.datetime.now()
-        print("trying again in %s seconds" % time_until_deadline.seconds)
+        now = datetime.datetime.now()
 
-        time.sleep(time_until_deadline.seconds + 20)
+        if now < deadline:
+            time_until_deadline = deadline - datetime.datetime.now()
+            print("trying again in %s seconds" % time_until_deadline.seconds)
+
+            time.sleep(abs(time_until_deadline.seconds + 20))
+        else:
+            time.sleep(20)
+
         # Revisit auction
         self.buy(url, max_price)
 
@@ -112,13 +131,40 @@ class VakantieveilingenController:
         self.browser.get(url)
         time.sleep(3)
 
-        return {
+        auction_details = {
             'extra_costs': self.get_extra_cost(),
             'retail_price': self.get_retail_price(),
             'supplier_link': self.get_supplier_link(),
             'category': self.get_category(),
-            'current_bid': self.get_current_bid(),
         }
+        
+        try:
+            DataRepository.create_category(auction_details['category'], '', 0)
+        except Exception:
+            pass
+        
+        try:
+            DataRepository.update_auction(
+                url,
+                auction_details['extra_costs'],
+                auction_details['retail_price'],
+                auction_details['category'],
+                auction_details['supplier_link']
+            )
+
+        except Exception:
+            try:
+                DataRepository.create_auction(
+                    url,
+                    auction_details['extra_costs'],
+                    auction_details['retail_price'],
+                    auction_details['category'],
+                    auction_details['supplier_link']
+                )
+            except Exception:
+                pass
+
+        return auction_details
 
     def fetch_auction_details(self, url):
         """
@@ -176,7 +222,10 @@ class VakantieveilingenController:
             return int(self.browser.find_element_by_id('jsMainLotCurrentBid').text)
 
         except Exception:
-            return None
+            return 0
+
+    def quit(self):
+        self.browser.close()
 
     @staticmethod
     def check_credentials(username):
@@ -188,7 +237,8 @@ class VakantieveilingenController:
     @staticmethod
     def get_deadline(auction_block):
         try:
-            list_of_time = auction_block.find_element_by_class_name('display-time-value').text.split(':')
+            bidding_container = auction_block.find_element_by_id('jsBiddingContainer')
+            list_of_time = bidding_container.find_element_by_class_name('display-time-value').text.split(':')
             current_time = datetime.datetime.now()
 
             return current_time + datetime.timedelta(
@@ -196,7 +246,12 @@ class VakantieveilingenController:
             )
 
         except Exception:
-            return None
+            try:
+                countdown_label = auction_block.find_element_by_class_name('timer-countdown-label')
+                return datetime.datetime.now() + datetime.timedelta(seconds=int(countdown_label.text))
+
+            except Exception:
+                return None
 
     @staticmethod
     def price_to_float(price_text):
