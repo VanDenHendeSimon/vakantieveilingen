@@ -29,7 +29,7 @@ class DataRepository:
 
     @staticmethod
     def get_wishlist():
-        sql = "SELECT * FROM wishlist;"
+        sql = "SELECT * FROM wishlist WHERE Bought = 0;"
         return Database.get_rows(sql)
 
     @staticmethod
