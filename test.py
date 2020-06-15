@@ -50,6 +50,7 @@ def main():
 
             controller.buy(
                 'https://www.vakantieveilingen.be/producten/elektronica/nordland_personenweegshaal-pd8734.html',
+                max_price=25
             )
 
         # check_auctions(controller)
