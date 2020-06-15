@@ -46,7 +46,29 @@ class VakantieveilingenController:
 
     def buy(self, url, max_price=None):
         if max_price is None:
-            max_price = DataRepository.get_max_price(url)
+            try:
+                max_price = DataRepository.get_max_price(url)
+
+            except Exception:
+                print("Url is not yet in the database. A max price must be specified")
+                print("Example: 20")
+                print("Example: 20.50")
+                print("Example: 20.9")
+                print("WRONG: €5")
+
+                max_price = input("Max Price: ")
+
+                try:
+                    DataRepository.create_auction(url, None, None, None, None)
+                except Exception:
+                    pass
+
+                try:
+                    DataRepository.create_wishlist(url, max_price)
+                except Exception as ex:
+                    exit("Failed to store wishlist item in the database because: %s" % ex)
+
+                self.buy(url)
 
         # move into a new thread / open up a new browser first? not necessary
         auction_details = self.process_auction(url)
