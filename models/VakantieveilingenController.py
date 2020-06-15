@@ -75,7 +75,11 @@ class VakantieveilingenController:
                         self.browser.find_element_by_id('jsActiveBidButton').click()
 
                         # won defaulting to 1, check this somehow
-                        DataRepository.create_history(url, (current_bid + auction_details['extra_costs']), 1, 1)
+                        DataRepository.create_history(url, (current_bid + 1 + auction_details['extra_costs']), 1, 1)
+                        DataRepository.bought_item_on_wishlist(url, (current_bid + 1 + auction_details['extra_costs']))
+
+                        # Close the window and quit this loop
+                        self.browser.close()
                         break
 
                     time.sleep(0.05)

@@ -97,3 +97,14 @@ class DataRepository:
         params = [max_price, url]
 
         return Database.execute_sql(sql, params)
+
+    @staticmethod
+    def bought_item_on_wishlist(url, price):
+        sql = """
+        UPDATE wishlist
+        SET Bought = 1, Bid = %s
+        WHERE AuctionURL= %s
+        """
+        params = [url, price]
+
+        return Database.execute_sql(sql, params)

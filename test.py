@@ -38,7 +38,7 @@ def main():
     with open('./data/blacklist.json', 'r') as f:
         blacklist = json.load(f)
 
-    threads = False
+    threads = True
     if threads:
         for item in DataRepository.get_wishlist():
             # Start a thread for each item in the wishlist and try to buy said item
