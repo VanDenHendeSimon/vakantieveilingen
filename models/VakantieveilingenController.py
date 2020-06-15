@@ -44,7 +44,10 @@ class VakantieveilingenController:
         if auction_details is not None:
             DataRepository.create_wishlist(url, max_price)
 
-    def buy(self, url, max_price):
+    def buy(self, url, max_price=None):
+        if max_price is None:
+            max_price = DataRepository.get_max_price(url)
+
         # move into a new thread / open up a new browser first? not necessary
         auction_details = self.process_auction(url)
         time.sleep(1)
@@ -53,7 +56,7 @@ class VakantieveilingenController:
         try:
             time_until_deadline = auction_details['deadline'] - datetime.datetime.now()
         except Exception:
-            self.buy(url, max_price)
+            self.buy(url)
 
         print("auction details: %s" % auction_details)
         # Sleep until 20 seconds before the deadline
@@ -112,7 +115,7 @@ class VakantieveilingenController:
             time.sleep(20)
 
         # Revisit auction
-        self.buy(url, max_price)
+        self.buy(url)
 
     def explore_products(self, amount):
         self.browser.get('https://www.vakantieveilingen.be/producten.html?amount=%s' % amount)

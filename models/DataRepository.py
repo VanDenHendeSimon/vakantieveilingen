@@ -108,3 +108,8 @@ class DataRepository:
         params = [url, price]
 
         return Database.execute_sql(sql, params)
+
+    @staticmethod
+    def get_max_price(url):
+        sql = "SELECT MaxPrice FROM wishlist WHERE AuctionURL = %s"
+        return Database.get_one_row(sql, [url]).get('MaxPrice', None)

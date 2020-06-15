@@ -27,10 +27,7 @@ def check_auctions(controller):
 def start_bidding(item):
     item_controller = VakantieveilingenController()
     if item_controller.login("simonvdhende@outlook.com"):
-        item_controller.buy(
-            item.get('AuctionURL'),
-            item.get('MaxPrice')
-        )
+        item_controller.buy(item.get('AuctionURL'))
 
 
 def main():
@@ -38,7 +35,7 @@ def main():
     with open('./data/blacklist.json', 'r') as f:
         blacklist = json.load(f)
 
-    threads = True
+    threads = False
     if threads:
         for item in DataRepository.get_wishlist():
             # Start a thread for each item in the wishlist and try to buy said item
@@ -53,7 +50,6 @@ def main():
 
             controller.buy(
                 'https://www.vakantieveilingen.be/producten/elektronica/nordland_personenweegshaal-pd8734.html',
-                25
             )
 
         # check_auctions(controller)
